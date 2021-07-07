@@ -15,7 +15,8 @@
   },
   "scripts": {
     "build": "tsc --project ./",
-    "lint": "npx ts-standard src/**/*.ts"
+    "lint": "npx ts-standard src/**/*.ts",
+    "lint:fix": "npx ts-standard src/**/*.ts --fix"
   },
   "repository": {
     "type": "git",
