@@ -58,7 +58,7 @@ export type ReturnSpyFunc = () => Promise<Action>
  * Object that defines user's turn in the round. It should
  */
 export interface Turn {
-  type: Action
+  action: Action
   card?: InventionCard
 }
 
