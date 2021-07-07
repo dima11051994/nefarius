@@ -1,23 +1,5 @@
-import { InventionCard, initCards, shuffle } from './utils/deck-utils'
-
-// TODO: What else is required?
-export interface Player {
-  turn: TurnFunc
-}
-
-export type TurnFunc = () => Promise<Turn>
-
-export interface Turn {
-  type: TurnType
-  card?: InventionCard
-}
-
-export enum TurnType {
-  ESPIONAGE = 1,
-  INVENTION,
-  RESEARCH,
-  JOB
-}
+import { initCards, shuffle } from './utils/deck-utils'
+import { Action, InventionCard, Player, Turn, User } from './types'
 
 export class Engine {
   players: Player[]
@@ -26,18 +8,34 @@ export class Engine {
   options: any
 
   // TODO: Define necessary options
-  constructor (players: Player[], options: any) {
+  constructor (users: User[], options: any) {
     // TODO: Use internal structure of players with all the necessary data populated, require from input only functions
-    this.players = players
+    this.players = []
+    for (const user of users) {
+      this.players.push({
+        user: user,
+        money: 10,
+        points: 0,
+        cards: [],
+        inventions: [],
+        spies: 5,
+        activeSpies: {
+          [Action.ESPIONAGE]: 0,
+          [Action.INVENTION]: 0,
+          [Action.RESEARCH]: 0,
+          [Action.JOB]: 0
+        }
+      })
+    }
     this.options = options
     this.activeDeck = initCards()
     this.usedDeck = []
   }
 
-  async start (): Promise<Player> {
+  async start (): Promise<User> {
     this.activeDeck = shuffle(this.activeDeck)
     this._distributeCards()
-    let winner: Player | null = null
+    let winner: User | null = null
     do {
       await this._playRound()
       winner = this._findWinner()
@@ -50,7 +48,7 @@ export class Engine {
   }
 
   private async _playRound (): Promise<void> {
-    await Promise.all(this.players.map(async (player) => await player.turn()))
+    await Promise.all(this.players.map(async (player) => await player.user.turn()))
     // TODO: Go through player turns, process them phase by phase
   }
 
@@ -78,7 +76,7 @@ export class Engine {
     // TODO: Process turn for players who have chosen job
   }
 
-  private _findWinner (): Player | null {
+  private _findWinner (): User | null {
     // TODO: Check every player's points, return winner if have any
     // TODO: multiple winners possibly?
     return null
