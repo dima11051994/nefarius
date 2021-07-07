@@ -1,0 +1,30 @@
+{
+  "name": "nefarius",
+  "version": "0.0.1",
+  "description": "Nefario engine. It's main goal is to handle the game process.",
+  "main": "build/index.js",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.170",
+    "@types/node": "^16.0.0",
+    "ts-node": "^10.0.0",
+    "ts-standard": "^10.0.0",
+    "typescript": "^4.3.5"
+  },
+  "scripts": {
+    "build": "tsc --project ./",
+    "lint": "npx ts-standard src/**/*.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dima11051994/nefarius.git"
+  },
+  "author": "Dmitry Redkovolosov <reddevil101@mail.ru>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dima11051994/nefarius/issues"
+  },
+  "homepage": "https://github.com/dima11051994/nefarius#readme"
+}
