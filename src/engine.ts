@@ -1,5 +1,5 @@
 import { initCards, shuffle } from './utils/deck-utils'
-import { Action, InventionCard, Player, Turn, User } from './types'
+import { Action, EffectDelimiter, EffectObject, InventionCard, Player, Turn, User } from './types'
 import EventEmitter from 'events'
 
 export class Engine extends EventEmitter {
@@ -40,6 +40,7 @@ export class Engine extends EventEmitter {
     let winner: User | null = null
     do {
       await this._playRound()
+      this._recalculatePoints()
       winner = this._findWinner()
     } while (winner == null)
     return winner
@@ -75,8 +76,16 @@ export class Engine extends EventEmitter {
    * @private
    */
   private async _processSpies (turns: Turn[]): Promise<void> {
-    await Promise.all(this.players.map((player, index) => {
-
+    await Promise.all(this.players.map(async (player, index) => {
+      const leftPlayerAction = turns[index === 0 ? turns.length - 1 : index - 1].action
+      const rightPlayerAction = turns[index === turns.length - 1 ? 0 : index + 1].action
+      // Earn 1 coin per each spy sitting on the action of player's neighbours
+      const moneyEarned = player.activeSpies[leftPlayerAction] + player.activeSpies[rightPlayerAction]
+      if (moneyEarned > 0) {
+        player.money += moneyEarned
+        await player.user.setMoney(player.money)
+        this.emit('spy.earn', index, moneyEarned)
+      }
     }))
   }
 
@@ -103,9 +112,53 @@ export class Engine extends EventEmitter {
     }))
   }
 
+  private _recalculatePoints (): void {
+    for (const player of this.players) {
+      player.points = 0
+      for (const invention of player.inventions) {
+        player.points += invention.points
+        const pointEffects = invention.effects.filter((effect) => effect.object === EffectObject.POINT)
+        for (const effect of pointEffects) {
+          let points = effect.count
+          switch (effect.delimiter) {
+            case EffectDelimiter.CARD:
+              points *= player.cards.length
+              break
+            case EffectDelimiter.INVENTION:
+              points *= player.inventions.length
+              break
+            case EffectDelimiter.SPY:
+              // Max spies count minus current available
+              points *= 5 - player.spies
+              break
+          }
+          player.points += points
+        }
+      }
+    }
+  }
+
   private _findWinner (): User | null {
-    // TODO: Check every player's points, return winner if have any
-    // TODO: multiple winners possibly?
+    const winnerCandidates = this.players
+      .filter((player) => player.points >= 10)
+      .sort((a, b) => {
+        if (a.points > b.points) {
+          return -1
+        }
+        if (a.points < b.points) {
+          return 1
+        }
+        if (a.inventions.length > b.inventions.length) {
+          return -1
+        }
+        if (a.inventions.length < b.inventions.length) {
+          return 1
+        }
+        return 0
+      })
+    if (winnerCandidates.length > 0) {
+      return winnerCandidates[0].user
+    }
     return null
   }
 }
