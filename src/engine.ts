@@ -100,7 +100,50 @@ export class Engine extends EventEmitter {
   }
 
   private async _espionagePhase (userTurns: Turn[]): Promise<void> {
-    // TODO: Process turn for players who have chosen espionage
+    await Promise.all(userTurns.map(async (turn, index) => {
+      if (userTurns[index].action !== Action.ESPIONAGE) {
+        return
+      }
+      if (this.players[index].spies !== 0) {
+        const response = await this.players[index].user.sendSpy()
+        switch (response) {
+          case Action.ESPIONAGE :
+            this.players[index].activeSpies[response] += 1
+            this.players[index].spies -= 1
+            break
+          case Action.INVENTION:
+            if (this.players[index].money > 1) {
+              this.players[index].activeSpies[response] += 1
+              this.players[index].spies -= 1
+              this.players[index].money -= 2
+              await this.players[index].user.setMoney(this.players[index].money)
+            }
+            else {
+              this.emit('nomoney.nospies')
+            }
+            break
+          case Action.RESEARCH:
+            this.players[index].activeSpies[response] += 1
+            this.players[index].spies -= 1
+            break
+          default:
+            if (this.players[index].money > 0) {
+              this.players[index].activeSpies[response] += 1
+              this.players[index].spies -= 1
+              this.players[index].money -= 1
+              await this.players[index].user.setMoney(this.players[index].money)
+            }
+            else {
+              this.emit('nomoney.nospies')
+            }
+            break
+        }
+      }
+      else {
+        this.emit('spies.over')
+      }
+      this.emit('espionage', index)
+    }))
   }
 
   private async _inventionPhase (userTurns: Turn[]): Promise<void> {
