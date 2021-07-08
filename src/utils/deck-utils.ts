@@ -2,7 +2,6 @@ import * as _ from 'lodash'
 import {EffectDelimiter, EffectObject, EffectTarget, InventionCard} from '../types'
 
 export function initCards (): InventionCard[] {
-  // TODO: Fill all cards here
   return [
     {
       id: 'BRAIN_JUICE',
