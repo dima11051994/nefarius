@@ -108,7 +108,32 @@ export class Engine extends EventEmitter {
   }
 
   private async _researchPhase (userTurns: Turn[]): Promise<void> {
-    // TODO: Process turn for players who have chosen research
+    await Promise.all(userTurns.map(async (turn, index) => {
+      if (userTurns[index].action !== Action.RESEARCH) {
+        return
+      }
+      let card = this.activeDeck.pop()
+      if (card !== undefined) {
+        this.players[index].cards.push(card)
+        await this.players[index].user.giveCards([card])
+      }
+      else {
+        this.activeDeck = this.usedDeck
+        this.usedDeck = []
+        this.activeDeck = shuffle(this.activeDeck)
+        card = this.activeDeck.pop()
+        if (card !== undefined) {
+          this.players[index].cards.push(card)
+          await this.players[index].user.giveCards([card])
+        }
+        else {
+          this.emit('emptyDeck')
+        }
+      }
+      this.players[index].money += 2
+      await this.players[index].user.setMoney(this.players[index].money)
+      this.emit('research', index)
+    }))
   }
 
   private async _jobPhase (userTurns: Turn[]): Promise<void> {
