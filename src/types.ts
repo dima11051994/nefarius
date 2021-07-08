@@ -50,7 +50,7 @@ export interface User {
 export type TurnFunc = () => Promise<Turn>
 export type GiveCardsFunc = (cards: InventionCard[]) => Promise<void>
 export type SetMoneyFunc = (money: number) => Promise<void>
-export type TakeOffCardsFunc = (count: number) => Promise<void>
+export type TakeOffCardsFunc = (count: number) => Promise<InventionCard[]>
 export type SendSpyFunc = () => Promise<Action>
 export type ReturnSpyFunc = () => Promise<Action>
 
@@ -83,5 +83,12 @@ export interface Player {
   // Current number of non-played spies
   spies: number
   // Active spies, map Action -> count of spies
+  activeSpies: Record<Action, number>
+}
+
+export interface PlayerPublic {
+  money: number
+  points: number
+  inventions: InventionCard[]
   activeSpies: Record<Action, number>
 }

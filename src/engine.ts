@@ -1,5 +1,5 @@
 import { initCards, shuffle } from './utils/deck-utils'
-import { Action, EffectDelimiter, EffectObject, InventionCard, Player, Turn, User } from './types'
+import { Action, EffectDelimiter, EffectObject, InventionCard, Player, PlayerPublic, Turn, User } from './types'
 import EventEmitter from 'events'
 
 export class Engine extends EventEmitter {
@@ -39,11 +39,21 @@ export class Engine extends EventEmitter {
     await Promise.all(this.players.map(async (player) => await player.user.setMoney(player.money)))
     let winner: User | null = null
     do {
+      this.emit('standings', this.getCurrentStandings())
       await this._playRound()
       this._recalculatePoints()
       winner = this._findWinner()
     } while (winner == null)
     return winner
+  }
+
+  getCurrentStandings (): PlayerPublic[] {
+    return this.players.map((player) => ({
+      money: player.money,
+      points: player.points,
+      inventions: player.inventions,
+      activeSpies: player.activeSpies
+    }))
   }
 
   private async _distributeCards (): Promise<void> {
