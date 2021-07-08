@@ -116,8 +116,7 @@ export class Engine extends EventEmitter {
       if (card !== undefined) {
         this.players[index].cards.push(card)
         await this.players[index].user.giveCards([card])
-      }
-      else {
+      } else {
         this.activeDeck = this.usedDeck
         this.usedDeck = []
         this.activeDeck = shuffle(this.activeDeck)
@@ -125,8 +124,7 @@ export class Engine extends EventEmitter {
         if (card !== undefined) {
           this.players[index].cards.push(card)
           await this.players[index].user.giveCards([card])
-        }
-        else {
+        } else {
           this.emit('emptyDeck')
         }
       }
