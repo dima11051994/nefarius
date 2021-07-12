@@ -1,5 +1,15 @@
-import { initCards, shuffle } from './utils/deck-utils'
-import { Action, EffectDelimiter, EffectObject, InventionCard, Player, PlayerPublic, Turn, User } from './types'
+import {initCards, shuffle} from './utils/deck-utils'
+import {
+  Action,
+  EffectDelimiter,
+  EffectObject,
+  EffectTarget,
+  InventionCard,
+  Player,
+  PlayerPublic,
+  Turn,
+  User
+} from './types'
 import EventEmitter from 'events'
 
 export class Engine extends EventEmitter {
@@ -140,7 +150,23 @@ export class Engine extends EventEmitter {
   }
 
   private async _inventionPhase(userTurns: Turn[]): Promise<void> {
-    // TODO: Process turn for players who have chosen invention, process effects
+    await Promise.all(userTurns.map(async (turn, index) => {
+      if (userTurns[index].action !== Action.INVENTION) {
+        return
+      }
+      if (turn.card) {
+        if (this.players[index].money >= turn.card.price) {
+          this.players[index].money -= turn.card.price
+          this.players[index].points += turn.card.points
+          this.players[index].inventions.push(turn.card)
+          let cards: InventionCard[] = []
+          cards.push(turn.card)
+          let indexes: number[] = []
+          indexes.push(index)
+        }
+      }
+
+    }))
   }
 
   private async _researchPhase(userTurns: Turn[]): Promise<void> {
@@ -148,22 +174,7 @@ export class Engine extends EventEmitter {
       if (userTurns[index].action !== Action.RESEARCH) {
         return
       }
-      let card = this.activeDeck.pop()
-      if (card !== undefined) {
-        this.players[index].cards.push(card)
-        await this.players[index].user.giveCards([card])
-      } else {
-        this.activeDeck = this.usedDeck
-        this.usedDeck = []
-        this.activeDeck = shuffle(this.activeDeck)
-        card = this.activeDeck.pop()
-        if (card !== undefined) {
-          this.players[index].cards.push(card)
-          await this.players[index].user.giveCards([card])
-        } else {
-          this.emit('emptyDeck')
-        }
-      }
+      await this.issueOfCards(index, 1)
       this.players[index].money += 2
       await this.players[index].user.setMoney(this.players[index].money)
       this.emit('research', index)
@@ -232,14 +243,90 @@ export class Engine extends EventEmitter {
   }
 
   private async canPlaceSpy(action: Action, money: number) {
-    const response = action
-    switch (response) {
+    switch (action) {
       case Action.JOB:
         return money > 0
       case Action.INVENTION:
         return money > 1
       default :
         return true
+    }
+  }
+  private async issueOfCards(index: number, quantity: number) {
+    let cards: InventionCard[] = []
+    for (let i = 0; i < quantity; i++) {
+    let card = this.activeDeck.pop()
+    if (card !== undefined) {
+      cards.push(card)
+    } else {
+      this.activeDeck = this.usedDeck
+      this.usedDeck = []
+      this.activeDeck = shuffle(this.activeDeck)
+      card = this.activeDeck.pop()
+      if (card !== undefined) {
+        cards.push(card)
+      } else {
+        this.emit('emptyDeck')
+      }
+    }
+    }
+    this.players[index].cards.push(...cards)
+    await this.players[index].user.giveCards(cards)
+  }
+  private async effectsAction (card: InventionCard, index: number){
+    for (let i = 0; card.effects.length; i++){
+      if (card.effects[i].target == EffectTarget.SELF){
+        if (card.effects[i].positive){
+          if (card.effects[i].object == EffectObject.MONEY){
+            this.players[index].money += card.effects[i].count
+          }
+          else if (card.effects[i].object == EffectObject.CARD){
+            await this.issueOfCards(index, card.effects[i].count)
+          }
+          else if (card.effects[i].object == EffectObject.SPY) {
+
+          }
+        }
+      }
+    }
+  }
+  private async effectDelimiterAction (effect: EffectDelimiter, index: number){
+    if (effect == EffectDelimiter.SPY){
+      return 5 - this.players[index].spies
+    }
+    else if (effect == EffectDelimiter.CARD){
+      return this.players[index].cards.length
+    }
+    else (effect == EffectDelimiter.INVENTION){
+      return this.players[index].inventions.length
+    }
+  }
+  private async effectObjectMoney (positive: boolean, count: number, index: number){
+    if (positive){
+      this.players[index].money += count
+    }
+    else {
+      this.players[index].money -= count
+    }
+  }
+  private async effectObjectCard (positive: boolean, count: number, index: number){
+    if (positive){
+      await this.issueOfCards (index, count)
+    }
+    else {
+      await this.players[index].user.takeOffCards(count)
+    }
+  }
+  private async effectObjectSpy (positive: boolean, count: number, index: number){
+    if (positive){
+      for (let i = 0; count; i++){
+        if (this.players[index].spies !== 0) {
+          let response = this.players[index].user.sendSpy()
+          this.players[index].activeSpies[response] += 1
+          this.players[index].spies -= 1
+        }
+      }
+
     }
   }
 }
