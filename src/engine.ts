@@ -9,7 +9,7 @@ export class Engine extends EventEmitter {
   options: any
 
   // TODO: Define necessary options
-  constructor (users: User[], options: any) {
+  constructor(users: User[], options: any) {
     super()
     this.players = []
     for (const user of users) {
@@ -33,7 +33,7 @@ export class Engine extends EventEmitter {
     this.usedDeck = []
   }
 
-  async start (): Promise<User> {
+  async start(): Promise<User> {
     this.activeDeck = shuffle(this.activeDeck)
     await this._distributeCards()
     await Promise.all(this.players.map(async (player) => await player.user.setMoney(player.money)))
@@ -47,7 +47,7 @@ export class Engine extends EventEmitter {
     return winner
   }
 
-  getCurrentStandings (): PlayerPublic[] {
+  getCurrentStandings(): PlayerPublic[] {
     return this.players.map((player) => ({
       money: player.money,
       points: player.points,
@@ -56,7 +56,7 @@ export class Engine extends EventEmitter {
     }))
   }
 
-  private async _distributeCards (): Promise<void> {
+  private async _distributeCards(): Promise<void> {
     // Give 4 initial invention cards to every player
     for (let i = 0; i < 4; i++) {
       // Go through every user and give one card at a time
@@ -71,7 +71,7 @@ export class Engine extends EventEmitter {
     await Promise.all(this.players.map(async (player) => await player.user.giveCards(player.cards)))
   }
 
-  private async _playRound (): Promise<void> {
+  private async _playRound(): Promise<void> {
     const userTurns: Turn[] = await Promise.all(this.players.map(async (player) => await player.user.turn()))
     this.emit('turn', userTurns)
     await this._processSpies(userTurns)
@@ -85,7 +85,7 @@ export class Engine extends EventEmitter {
    * Process current spies
    * @private
    */
-  private async _processSpies (turns: Turn[]): Promise<void> {
+  private async _processSpies(turns: Turn[]): Promise<void> {
     await Promise.all(this.players.map(async (player, index) => {
       const leftPlayerAction = turns[index === 0 ? turns.length - 1 : index - 1].action
       const rightPlayerAction = turns[index === turns.length - 1 ? 0 : index + 1].action
@@ -99,58 +99,51 @@ export class Engine extends EventEmitter {
     }))
   }
 
-  private async _espionagePhase (userTurns: Turn[]): Promise<void> {
+  private async _espionagePhase(userTurns: Turn[]): Promise<void> {
     await Promise.all(userTurns.map(async (turn, index) => {
       if (userTurns[index].action !== Action.ESPIONAGE) {
         return
       }
       if (this.players[index].spies !== 0) {
-        const response = await this.players[index].user.sendSpy()
+        let response
+        do {
+          response = await this.players[index].user.sendSpy()
+        }
+        while (!await this.canPlaceSpy(response, this.players[index].money))
         switch (response) {
           case Action.ESPIONAGE :
             this.players[index].activeSpies[response] += 1
             this.players[index].spies -= 1
             break
           case Action.INVENTION:
-            if (this.players[index].money > 1) {
-              this.players[index].activeSpies[response] += 1
-              this.players[index].spies -= 1
-              this.players[index].money -= 2
-              await this.players[index].user.setMoney(this.players[index].money)
-            }
-            else {
-              this.emit('nomoney.nospies')
-            }
+            this.players[index].activeSpies[response] += 1
+            this.players[index].spies -= 1
+            this.players[index].money -= 2
+            await this.players[index].user.setMoney(this.players[index].money)
             break
           case Action.RESEARCH:
             this.players[index].activeSpies[response] += 1
             this.players[index].spies -= 1
             break
           default:
-            if (this.players[index].money > 0) {
-              this.players[index].activeSpies[response] += 1
-              this.players[index].spies -= 1
-              this.players[index].money -= 1
-              await this.players[index].user.setMoney(this.players[index].money)
-            }
-            else {
-              this.emit('nomoney.nospies')
-            }
+            this.players[index].activeSpies[response] += 1
+            this.players[index].spies -= 1
+            this.players[index].money -= 1
+            await this.players[index].user.setMoney(this.players[index].money)
             break
         }
-      }
-      else {
+      } else {
         this.emit('spies.over')
       }
       this.emit('espionage', index)
     }))
   }
 
-  private async _inventionPhase (userTurns: Turn[]): Promise<void> {
+  private async _inventionPhase(userTurns: Turn[]): Promise<void> {
     // TODO: Process turn for players who have chosen invention, process effects
   }
 
-  private async _researchPhase (userTurns: Turn[]): Promise<void> {
+  private async _researchPhase(userTurns: Turn[]): Promise<void> {
     await Promise.all(userTurns.map(async (turn, index) => {
       if (userTurns[index].action !== Action.RESEARCH) {
         return
@@ -177,7 +170,7 @@ export class Engine extends EventEmitter {
     }))
   }
 
-  private async _jobPhase (userTurns: Turn[]): Promise<void> {
+  private async _jobPhase(userTurns: Turn[]): Promise<void> {
     await Promise.all(userTurns.map(async (turn, index) => {
       if (userTurns[index].action !== Action.JOB) {
         return
@@ -188,7 +181,7 @@ export class Engine extends EventEmitter {
     }))
   }
 
-  private _recalculatePoints (): void {
+  private _recalculatePoints(): void {
     for (const player of this.players) {
       player.points = 0
       for (const invention of player.inventions) {
@@ -214,27 +207,39 @@ export class Engine extends EventEmitter {
     }
   }
 
-  private _findWinner (): User | null {
+  private _findWinner(): User | null {
     const winnerCandidates = this.players
-      .filter((player) => player.points >= 10)
-      .sort((a, b) => {
-        if (a.points > b.points) {
-          return -1
-        }
-        if (a.points < b.points) {
-          return 1
-        }
-        if (a.inventions.length > b.inventions.length) {
-          return -1
-        }
-        if (a.inventions.length < b.inventions.length) {
-          return 1
-        }
-        return 0
-      })
+        .filter((player) => player.points >= 10)
+        .sort((a, b) => {
+          if (a.points > b.points) {
+            return -1
+          }
+          if (a.points < b.points) {
+            return 1
+          }
+          if (a.inventions.length > b.inventions.length) {
+            return -1
+          }
+          if (a.inventions.length < b.inventions.length) {
+            return 1
+          }
+          return 0
+        })
     if (winnerCandidates.length > 0) {
       return winnerCandidates[0].user
     }
     return null
+  }
+
+  private async canPlaceSpy(action: Action, money: number) {
+    const response = action
+    switch (response) {
+      case Action.JOB:
+        return money > 0
+      case Action.INVENTION:
+        return money > 1
+      default :
+        return true
+    }
   }
 }
