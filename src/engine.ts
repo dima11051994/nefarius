@@ -246,7 +246,7 @@ export class Engine extends EventEmitter {
 
   private _findWinner (): User | null {
     const winnerCandidates = this.players
-      .filter((player) => player.points >= 10)
+      .filter((player) => player.points >= 20)
       .sort((a, b) => {
         if (a.points > b.points) {
           return -1

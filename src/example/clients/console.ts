@@ -76,7 +76,7 @@ export class ConsoleClient implements User {
 
   async returnSpy (): Promise<Action> {
     console.log('Select action from where to remove your spy:')
-    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEAARCH', 'JOB',
+    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEARCH', 'JOB',
       'E', 'I', 'R', 'J'])
     switch (response) {
       case '1':
@@ -101,7 +101,7 @@ export class ConsoleClient implements User {
 
   async sendSpy (): Promise<Action> {
     console.log('Select action for your spy:')
-    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEAARCH', 'JOB',
+    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEARCH', 'JOB',
       'E', 'I', 'R', 'J'])
     switch (response) {
       case '1':

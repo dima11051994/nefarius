@@ -1,8 +1,4 @@
-import { ConsoleClient } from './clients/console'
-import { Engine } from '../engine'
-
-const player: ConsoleClient = new ConsoleClient()
-const engine: Engine = new Engine([player], {})
-engine.start()
+import { main } from './socket-server-game'
+main()
   .then(console.log)
   .catch(console.error)
