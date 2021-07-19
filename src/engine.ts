@@ -159,22 +159,40 @@ export class Engine extends EventEmitter {
         if (this.players[index].money >= turn.card.price) {
           this.players[index].money -= turn.card.price
           cards[index] = turn.card
+          this.players[index].inventions.push(turn.card)
+          this.players[index].cards.slice(this.players[index].cards.indexOf(turn.card), 1)
+          this.usedDeck.push(turn.card)
+        } else {
+          await this.players[index].user.giveCards([turn.card])
+          await this.players[index].user.setMoney(this.players[index].money)
         }
-      }
-      if (cards.length !== 0) {
-        for (let i = 0; cards.length > 0; i++) {
-          if (cards[i] !== undefined) {
-            await this.effectsActionSelf(cards[i], i)
-          }
-        }
-        for (let i = 0; cards.length > 0; i++) {
-          if (cards[i] !== undefined) {
-            await this.effectsActionOthers(cards[i], i)
-          }
-        }
-        this.players[index].inventions.push(turn.card!)
       }
     }))
+    if (cards.length !== 0) {
+      for (let i = 0; i < this.players.length; i++) {
+        if (cards[i] !== undefined) {
+          for (let indexeff = 0; indexeff < cards[i].effects.length; indexeff++) {
+            if (cards[i].effects[indexeff].target === EffectTarget.SELF) {
+              await this.effectsAction(cards[i], i, indexeff)
+            }
+          }
+        }
+      }
+      for (let i = 0; i < this.players.length; i++) {
+        for (let indexcard = i + 1; indexcard !== i; indexcard++) {
+          if (cards[indexcard] !== undefined) {
+            for (let indexeff = 0; indexeff < cards[i].effects.length; indexeff++) {
+              if (cards[indexcard].effects[indexeff].target === EffectTarget.OTHERS) {
+                await this.effectsAction(cards[indexcard], i, indexeff)
+              }
+            }
+          }
+          if (indexcard >= this.players.length - 1) {
+            indexcard = 0
+          }
+        }
+      }
+    }
   }
 
   private async _researchPhase (userTurns: Turn[]): Promise<void> {
@@ -283,64 +301,25 @@ export class Engine extends EventEmitter {
     await this.players[index].user.giveCards(cards)
   }
 
-  private async effectsActionSelf (card: InventionCard, index: number) {
-    for (let i = 0; card.effects.length > 0; i++) {
-      if (card.effects[i].target === EffectTarget.SELF) {
-        if (card.effects[i].delimiter !== undefined) {
-          const delimiter = await this.effectDelimiterAction(card.effects[i].delimiter!, index)
-          const count = delimiter! + card.effects[i].count
-          switch (card.effects[i].object) {
-            case EffectObject.MONEY:
-              this.effectObjectMoney(card.effects[i].positive, count, index)
-            case EffectObject.CARD:
-              this.effectObjectCard(card.effects[i].positive, count, index)
-            default:
-              this.effectObjectSpy(card.effects[i].positive, count, index)
-          }
-        } else {
-          switch (card.effects[i].object) {
-            case EffectObject.MONEY:
-              this.effectObjectMoney(card.effects[i].positive, card.effects[i].count, index)
-            case EffectObject.CARD:
-              this.effectObjectCard(card.effects[i].positive, card.effects[i].count, index)
-            default:
-              this.effectObjectSpy(card.effects[i].positive, card.effects[i].count, index)
-          }
-        }
-      } else { return }
+  private async effectsAction (card: InventionCard, index: number, i: number) {
+    let delimiter
+    if (card.effects[i].delimiter !== undefined) {
+      delimiter = await this.effectDelimiterAction(card.effects[i].delimiter!, index)
+    } else {
+      delimiter = 1
     }
-  }
-
-  private async effectsActionOthers (card: InventionCard, index: number) {
-    for (let i = 0; card.effects.length > 0; i++) {
-      if (card.effects[i].target === EffectTarget.OTHERS) {
-        for (let a = 0; this.players.length > 0; i++) {
-          if (index == a) {
-            return
-          }
-          if (card.effects[i].delimiter !== undefined) {
-            const delimiter = await this.effectDelimiterAction(card.effects[i].delimiter!, a)
-            const count = delimiter! + card.effects[i].count
-            switch (card.effects[i].object) {
-              case EffectObject.MONEY:
-                this.effectObjectMoney(card.effects[i].positive, count, a)
-              case EffectObject.CARD:
-                this.effectObjectCard(card.effects[i].positive, count, a)
-              default:
-                this.effectObjectSpy(card.effects[i].positive, count, a)
-            }
-          } else {
-            switch (card.effects[i].object) {
-              case EffectObject.MONEY:
-                this.effectObjectMoney(card.effects[i].positive, card.effects[i].count, a)
-              case EffectObject.CARD:
-                this.effectObjectCard(card.effects[i].positive, card.effects[i].count, a)
-              default:
-                this.effectObjectSpy(card.effects[i].positive, card.effects[i].count, a)
-            }
-          }
-        }
-      } else { return }
+    const count = delimiter! * card.effects[i].count
+    switch (card.effects[i].object) {
+      case EffectObject.MONEY:
+        await this.effectObjectMoney(card.effects[i].positive, count, index)
+        await this.players[index].user.setMoney(this.players[index].money)
+        break
+      case EffectObject.CARD:
+        await this.effectObjectCard(card.effects[i].positive, count, index)
+        break
+      default:
+        await this.effectObjectSpy(card.effects[i].positive, count, index)
+        break
     }
   }
 
@@ -359,6 +338,9 @@ export class Engine extends EventEmitter {
       this.players[index].money += count
     } else {
       this.players[index].money -= count
+      if (this.players[index].money < 0) {
+        this.players[index].money = 0
+      }
     }
   }
 
@@ -366,13 +348,15 @@ export class Engine extends EventEmitter {
     if (positive) {
       await this.issueOfCards(index, count)
     } else {
-      await this.players[index].user.takeOffCards(count)
+      const offcarcds = await this.players[index].user.takeOffCards(count)
+      this.usedDeck.push(...offcarcds)
+      this.players[index].cards = this.players[index].cards.filter((a) => !offcarcds.includes(a))
     }
   }
 
   private async effectObjectSpy (positive: boolean, count: number, index: number) {
     if (positive) {
-      for (let i = 0; count; i++) {
+      for (let i = 0; i < count; i++) {
         if (this.players[index].spies !== 0) {
           const response = await this.players[index].user.sendSpy()
           this.players[index].activeSpies[response] += 1
@@ -380,11 +364,16 @@ export class Engine extends EventEmitter {
         } else this.emit('spies over')
       }
     } else {
-      for (let i = 0; count; i++) {
+      for (let i = 0; i < count; i++) {
         if (this.players[index].spies !== 5) {
-          const returspy = await this.players[index].user.returnSpy()
-          this.players[index].activeSpies[returspy] -= 1
-          this.players[index].spies += 1
+          while (true) {
+            const returspy = await this.players[index].user.returnSpy()
+            if (this.players[index].activeSpies[returspy] !== 0) {
+              this.players[index].activeSpies[returspy] -= 1
+              this.players[index].spies += 1
+              return
+            }
+          }
         } else {
           this.emit('all spies')
         }
