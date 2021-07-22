@@ -160,7 +160,7 @@ export class Engine extends EventEmitter {
           this.players[index].money -= turn.card.price
           cards[index] = turn.card
           this.players[index].inventions.push(turn.card)
-          this.players[index].cards.splice(this.players[index].cards.findIndex(i => i == turn.card), 1)
+          this.players[index].cards.splice(this.players[index].cards.findIndex(i => i.id == turn.card?.id), 1)
         } else {
           await this.players[index].user.giveCards([turn.card])
           await this.players[index].user.setMoney(this.players[index].money)
