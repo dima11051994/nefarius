@@ -12,7 +12,7 @@ const socket = new net.Socket()
 socket.on('error', (err) => console.error(err))
 socket.on('close', () => console.error('closed'))
 socket.on('connect', () => console.log('connected'))
-socket.on('data', (data) => socketDataHandler(data).catch(console.error))
+socket.on('data', async (data) => await socketDataHandler(data).catch(console.error))
 
 socket.connect({
   host: HOST,
@@ -29,8 +29,8 @@ async function socketDataHandler (chunk: Buffer): Promise<void> {
     buffer = data
   } else {
     buffer = messages.pop()!
-    for (let messageStr of messages) {
-      const message: SocketMessage = JSON.parse(messageStr);
+    for (const messageStr of messages) {
+      const message: SocketMessage = JSON.parse(messageStr)
       await messageHandler(message)
     }
   }

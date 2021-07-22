@@ -27,7 +27,6 @@ export interface SocketMessage {
 }
 
 export class SocketPlayer implements User {
-
   socket: net.Socket
   waitingFunction: ((answer: SocketMessage) => void) | null = null
   pendingCommand: Method | null = null
@@ -49,8 +48,8 @@ export class SocketPlayer implements User {
       if (this.pendingCommand === null) {
         return
       }
-      for (let messageStr of messages) {
-        const message: SocketMessage = JSON.parse(messageStr);
+      for (const messageStr of messages) {
+        const message: SocketMessage = JSON.parse(messageStr)
         if (message.method === this.pendingCommand) {
           this.waitingFunction!(message)
         }
@@ -106,7 +105,6 @@ export class SocketPlayer implements User {
     const answer = await this.waitForAnswer(Method.TURN)
     return answer.turn!
   }
-
 }
 
 const PORT = 11051
@@ -116,11 +114,11 @@ const players: SocketPlayer[] = []
 let engine: Engine
 
 export async function main (): Promise<number> {
-  let server = net.createServer((socket) => {
+  const server = net.createServer((socket) => {
     console.log('Connected new client')
     if (players.length >= EXPECTED_PLAYERS) {
       socket.write(JSON.stringify({ status: PlayerStatus.ERROR, message: 'This game is full' }) + '\r')
-      socket.end();
+      socket.end()
     } else {
       players.push(new SocketPlayer(socket))
       socket.write(JSON.stringify({ status: PlayerStatus.REGISTERED, index: players.length - 1 }) + '\r')
@@ -135,7 +133,7 @@ export async function main (): Promise<number> {
   }
   engine = new Engine(players, {})
   const winner = await engine.start()
-  return _.findIndex(players, winner);
+  return _.findIndex(players, winner)
 }
 
 async function sleep (ms: number): Promise<void> {

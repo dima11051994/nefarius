@@ -160,8 +160,7 @@ export class Engine extends EventEmitter {
           this.players[index].money -= turn.card.price
           cards[index] = turn.card
           this.players[index].inventions.push(turn.card)
-          this.players[index].cards.slice(this.players[index].cards.indexOf(turn.card), 1)
-          this.usedDeck.push(turn.card)
+          this.players[index].cards.splice(this.players[index].cards.findIndex(i => i.id == turn.card?.id), 1)
         } else {
           await this.players[index].user.giveCards([turn.card])
           await this.players[index].user.setMoney(this.players[index].money)
@@ -171,9 +170,11 @@ export class Engine extends EventEmitter {
     if (cards.length !== 0) {
       for (let i = 0; i < this.players.length; i++) {
         if (cards[i] !== undefined) {
-          for (let indexeff = 0; indexeff < cards[i].effects.length; indexeff++) {
-            if (cards[i].effects[indexeff].target === EffectTarget.SELF) {
-              await this.effectsAction(cards[i], i, indexeff)
+          if (cards[i].effects[0] !== undefined) {
+            for (let indexeff = 0; indexeff < cards[i].effects.length; indexeff++) {
+              if (cards[i].effects[indexeff].target === EffectTarget.SELF) {
+                await this.effectsAction(cards[i], i, indexeff)
+              }
             }
           }
         }
@@ -181,14 +182,16 @@ export class Engine extends EventEmitter {
       for (let i = 0; i < this.players.length; i++) {
         for (let indexcard = i + 1; indexcard !== i; indexcard++) {
           if (cards[indexcard] !== undefined) {
-            for (let indexeff = 0; indexeff < cards[i].effects.length; indexeff++) {
-              if (cards[indexcard].effects[indexeff].target === EffectTarget.OTHERS) {
-                await this.effectsAction(cards[indexcard], i, indexeff)
+            if (cards[indexcard].effects[0] !== undefined) {
+              for (let indexeff = 0; indexeff < cards[indexcard].effects.length; indexeff++) {
+                if (cards[indexcard].effects[indexeff].target == EffectTarget.OTHERS) {
+                  await this.effectsAction(cards[indexcard], i, indexeff)
+                }
               }
             }
           }
           if (indexcard >= this.players.length - 1) {
-            indexcard = 0
+            indexcard = -1
           }
         }
       }
