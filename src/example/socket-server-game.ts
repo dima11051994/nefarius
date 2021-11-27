@@ -38,20 +38,20 @@ export class SocketPlayer implements User {
 
   buffer: string = ''
 
-  _socketDataHandler (chunk: Buffer) {
+  _socketDataHandler (chunk: Buffer): void {
     const data: string = this.buffer + chunk.toString()
     const messages = data.split('\r')
     if (messages.length === 1) {
       this.buffer = data
     } else {
-      this.buffer = messages.pop()!
+      this.buffer = messages.pop() ?? ''
       if (this.pendingCommand === null) {
         return
       }
       for (const messageStr of messages) {
         const message: SocketMessage = JSON.parse(messageStr)
-        if (message.method === this.pendingCommand) {
-          this.waitingFunction!(message)
+        if (message.method === this.pendingCommand && this.waitingFunction !== null) {
+          this.waitingFunction(message)
         }
       }
     }
@@ -79,14 +79,20 @@ export class SocketPlayer implements User {
 
   async returnSpy (): Promise<Action> {
     await this.socket.write(JSON.stringify({ method: Method.RETURN_SPY }) + '\r')
-    const answer = await this.waitForAnswer(Method.RETURN_SPY)
-    return answer.action!
+    let answer
+    do {
+      answer = await this.waitForAnswer(Method.RETURN_SPY)
+    } while (answer.action === undefined)
+    return answer.action
   }
 
   async sendSpy (): Promise<Action> {
     await this.socket.write(JSON.stringify({ method: Method.SEND_SPY }) + '\r')
-    const answer = await this.waitForAnswer(Method.SEND_SPY)
-    return answer.action!
+    let answer
+    do {
+      answer = await this.waitForAnswer(Method.SEND_SPY)
+    } while (answer.action === undefined)
+    return answer.action
   }
 
   async setMoney (money: number): Promise<void> {
@@ -96,14 +102,20 @@ export class SocketPlayer implements User {
 
   async takeOffCards (count: number): Promise<InventionCard[]> {
     await this.socket.write(JSON.stringify({ method: Method.TAKE_OFF_CARDS, count: count }) + '\r')
-    const answer = await this.waitForAnswer(Method.TAKE_OFF_CARDS)
-    return answer.cards!
+    let answer
+    do {
+      answer = await this.waitForAnswer(Method.TAKE_OFF_CARDS)
+    } while (answer.cards === undefined)
+    return answer.cards
   }
 
   async turn (): Promise<Turn> {
     await this.socket.write(JSON.stringify({ method: Method.TURN }) + '\r')
-    const answer = await this.waitForAnswer(Method.TURN)
-    return answer.turn!
+    let answer
+    do {
+      answer = await this.waitForAnswer(Method.TURN)
+    } while (answer.turn === undefined)
+    return answer.turn
   }
 }
 

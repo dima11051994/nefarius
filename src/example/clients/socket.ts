@@ -12,7 +12,9 @@ const socket = new net.Socket()
 socket.on('error', (err) => console.error(err))
 socket.on('close', () => console.error('closed'))
 socket.on('connect', () => console.log('connected'))
-socket.on('data', async (data) => await socketDataHandler(data).catch(console.error))
+socket.on('data', (data) => {
+  socketDataHandler(data).catch(console.error)
+})
 
 socket.connect({
   host: HOST,
@@ -28,7 +30,7 @@ async function socketDataHandler (chunk: Buffer): Promise<void> {
   if (messages.length === 1) {
     buffer = data
   } else {
-    buffer = messages.pop()!
+    buffer = messages.pop() ?? ''
     for (const messageStr of messages) {
       const message: SocketMessage = JSON.parse(messageStr)
       await messageHandler(message)
@@ -36,15 +38,15 @@ async function socketDataHandler (chunk: Buffer): Promise<void> {
   }
 }
 
-async function messageHandler (message: SocketMessage) {
+async function messageHandler (message: SocketMessage): Promise<void> {
   let answer
   switch (message.method) {
     case Method.GIVE_CARDS:
-      await consoleClient.giveCards(message.cards!)
+      await consoleClient.giveCards(message.cards ?? [])
       await socket.write(JSON.stringify({ method: Method.GIVE_CARDS }) + '\r')
       break
     case Method.SET_MONEY:
-      await consoleClient.setMoney(message.count!)
+      await consoleClient.setMoney(message.count ?? 0)
       await socket.write(JSON.stringify({ method: Method.SET_MONEY }) + '\r')
       break
     case Method.RETURN_SPY:
@@ -56,7 +58,7 @@ async function messageHandler (message: SocketMessage) {
       await socket.write(JSON.stringify({ method: Method.SEND_SPY, action: answer }) + '\r')
       break
     case Method.TAKE_OFF_CARDS:
-      answer = await consoleClient.takeOffCards(message.count!)
+      answer = await consoleClient.takeOffCards(message.count ?? 0)
       await socket.write(JSON.stringify({ method: Method.TAKE_OFF_CARDS, cards: answer }) + '\r')
       break
     case Method.TURN:
