@@ -22,6 +22,7 @@ export interface SocketMessage {
   method: Method
   action?: Action
   cards?: InventionCard[]
+  cardIds?: string[]
   turn?: Turn
   count?: number
 }
@@ -86,7 +87,7 @@ export class SocketPlayer implements User {
     return answer.action
   }
 
-  async sendSpy (): Promise<Action> {
+  async placeSpy (): Promise<Action> {
     await this.socket.write(JSON.stringify({ method: Method.SEND_SPY }) + '\r')
     let answer
     do {
@@ -95,18 +96,18 @@ export class SocketPlayer implements User {
     return answer.action
   }
 
-  async setMoney (money: number): Promise<void> {
+  async setCoins (money: number): Promise<void> {
     await this.socket.write(JSON.stringify({ method: Method.SET_MONEY, count: money }) + '\r')
     await this.waitForAnswer(Method.SET_MONEY)
   }
 
-  async takeOffCards (count: number): Promise<InventionCard[]> {
+  async takeOffCards (count: number): Promise<string[]> {
     await this.socket.write(JSON.stringify({ method: Method.TAKE_OFF_CARDS, count: count }) + '\r')
     let answer
     do {
       answer = await this.waitForAnswer(Method.TAKE_OFF_CARDS)
-    } while (answer.cards === undefined)
-    return answer.cards
+    } while (answer.cardIds === undefined)
+    return answer.cardIds
   }
 
   async turn (): Promise<Turn> {
@@ -143,7 +144,7 @@ export async function main (): Promise<number> {
   for (const player of players) {
     player.socket.write(JSON.stringify({ status: PlayerStatus.STARTED }) + '\r')
   }
-  engine = new Engine(players, {})
+  engine = new Engine(players)
   const winner = await engine.start()
   return _.findIndex(players, winner)
 }

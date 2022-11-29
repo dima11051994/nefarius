@@ -99,7 +99,7 @@ export class ConsoleClient implements User {
     }
   }
 
-  async sendSpy (): Promise<Action> {
+  async placeSpy (): Promise<Action> {
     console.log('Select action for your spy:')
     const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEARCH', 'JOB',
       'E', 'I', 'R', 'J'])
@@ -124,17 +124,17 @@ export class ConsoleClient implements User {
     }
   }
 
-  async setMoney (money: number): Promise<void> {
+  async setCoins (money: number): Promise<void> {
     console.log(`Now you have ${money} coin${money === 1 ? '' : 's'}`)
     this.money = money
     return await Promise.resolve()
   }
 
-  async takeOffCards (count: number): Promise<InventionCard[]> {
+  async takeOffCards (count: number): Promise<string[]> {
     console.log(`You need to take off ${count} card${count === 1 ? '' : 's'}`)
     if (this.cards.length <= count) {
       console.log('All your cards will be taken off')
-      const result = this.cards
+      const result = this.cards.map((card) => card.id)
       this.cards = []
       return result
     }
@@ -166,7 +166,7 @@ export class ConsoleClient implements User {
       return 0
     })
     for (const index of removedCardIndexes) {
-      response.push(this.cards[index - 1])
+      response.push(this.cards[index - 1].id)
       this.cards.splice(index - 1, 1)
     }
 
@@ -176,7 +176,7 @@ export class ConsoleClient implements User {
   async turn (): Promise<Turn> {
     console.log('Select action that you will perform:')
     let action: Action
-    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEAARCH', 'JOB',
+    const response = await this.waitForAnswer(['1', '2', '3', '4', 'ESPIONAGE', 'INVENTION', 'RESEARCH', 'JOB',
       'E', 'I', 'R', 'J'])
     switch (response) {
       case '1':
@@ -237,7 +237,7 @@ export class ConsoleClient implements User {
       case EffectObject.CARD:
         result += ' card' + (effect.count === 1 ? '' : 's')
         break
-      case EffectObject.MONEY:
+      case EffectObject.COIN:
         result += ' coin' + (effect.count === 1 ? '' : 's')
         break
       case EffectObject.SPY:

@@ -42,13 +42,13 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 2
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 2
         }
@@ -178,7 +178,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 4
         }
@@ -197,7 +197,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 2
         }
@@ -262,7 +262,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 8
         }
@@ -275,7 +275,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 1,
           delimiter: EffectDelimiter.SPY
@@ -302,13 +302,13 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 2
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 2
         }
@@ -321,7 +321,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 1,
           delimiter: EffectDelimiter.INVENTION
@@ -410,7 +410,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 4
         }
@@ -423,13 +423,13 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 2
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 4
         }
@@ -442,7 +442,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 3
         }
@@ -508,7 +508,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 1
         },
@@ -584,7 +584,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 2
         }
@@ -603,7 +603,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 1
         },
@@ -667,7 +667,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 3,
           delimiter: EffectDelimiter.CARD
@@ -719,13 +719,13 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 3
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 3
         }
@@ -782,7 +782,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 1
         },
@@ -831,7 +831,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.SELF,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 1,
           delimiter: EffectDelimiter.INVENTION
@@ -845,7 +845,7 @@ export function initCards (): InventionCard[] {
       effects: [
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: true,
           count: 2
         }
@@ -896,7 +896,7 @@ export function initCards (): InventionCard[] {
         },
         {
           target: EffectTarget.OTHERS,
-          object: EffectObject.MONEY,
+          object: EffectObject.COIN,
           positive: false,
           count: 1
         },

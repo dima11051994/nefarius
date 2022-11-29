@@ -11,7 +11,7 @@ export enum EffectTarget {
 }
 
 export enum EffectObject {
-  MONEY = 'MONEY',
+  COIN = 'COIN',
   CARD = 'CARD',
   SPY = 'SPY',
   POINT = 'POINT'
@@ -37,20 +37,20 @@ export interface User {
   turn: TurnFunc
   // Give card(s) to a user
   giveCards: GiveCardsFunc
-  // Set current user's money
-  setMoney: SetMoneyFunc
+  // Set current user's coins
+  setCoins: SetCoinsFunc
   // Take off the specified number of cards from user
   takeOffCards: TakeOffCardsFunc
   // Send spy to the specified field
-  sendSpy: SendSpyFunc
+  placeSpy: SendSpyFunc
   // Return spy from some field
   returnSpy: ReturnSpyFunc
 }
 
 export type TurnFunc = () => Promise<Turn>
 export type GiveCardsFunc = (cards: InventionCard[]) => Promise<void>
-export type SetMoneyFunc = (money: number) => Promise<void>
-export type TakeOffCardsFunc = (count: number) => Promise<InventionCard[]>
+export type SetCoinsFunc = (coins: number) => Promise<void>
+export type TakeOffCardsFunc = (count: number) => Promise<string[]>
 export type SendSpyFunc = () => Promise<Action>
 export type ReturnSpyFunc = () => Promise<Action>
 
@@ -69,25 +69,8 @@ export enum Action {
   JOB
 }
 
-export interface Player {
-  // Person who will be performing some actions
-  user: User
-  // Current amount of money
-  money: number
-  // Current number of points
-  points: number
-  // Current cards in hands
-  cards: InventionCard[]
-  // Current played invention cards
-  inventions: InventionCard[]
-  // Current number of non-played spies
-  spies: number
-  // Active spies, map Action -> count of spies
-  activeSpies: Record<Action, number>
-}
-
-export interface PlayerPublic {
-  money: number
+export interface PlayerStats {
+  coins: number
   points: number
   inventions: InventionCard[]
   activeSpies: Record<Action, number>

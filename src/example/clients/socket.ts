@@ -46,7 +46,7 @@ async function messageHandler (message: SocketMessage): Promise<void> {
       await socket.write(JSON.stringify({ method: Method.GIVE_CARDS }) + '\r')
       break
     case Method.SET_MONEY:
-      await consoleClient.setMoney(message.count ?? 0)
+      await consoleClient.setCoins(message.count ?? 0)
       await socket.write(JSON.stringify({ method: Method.SET_MONEY }) + '\r')
       break
     case Method.RETURN_SPY:
@@ -54,12 +54,12 @@ async function messageHandler (message: SocketMessage): Promise<void> {
       await socket.write(JSON.stringify({ method: Method.RETURN_SPY, action: answer }) + '\r')
       break
     case Method.SEND_SPY:
-      answer = await consoleClient.sendSpy()
+      answer = await consoleClient.placeSpy()
       await socket.write(JSON.stringify({ method: Method.SEND_SPY, action: answer }) + '\r')
       break
     case Method.TAKE_OFF_CARDS:
       answer = await consoleClient.takeOffCards(message.count ?? 0)
-      await socket.write(JSON.stringify({ method: Method.TAKE_OFF_CARDS, cards: answer }) + '\r')
+      await socket.write(JSON.stringify({ method: Method.TAKE_OFF_CARDS, cardIds: answer }) + '\r')
       break
     case Method.TURN:
       answer = await consoleClient.turn()
