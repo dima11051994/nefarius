@@ -96,12 +96,14 @@ export class Engine extends EventEmitter {
   }
 
   async #playRound (): Promise<void> {
+    await this.#playLawActions(LawPhase.BEFORE_TURN)
     const userTurns: Turn[] = await Promise.all(this.#players.map(async (player) => await player.turn()))
     await this.#playLawActions(LawPhase.ON_ACTION_SELECT, userTurns)
     this.emit('turn', userTurns)
     await this.#processSpies(userTurns)
     await this.#espionagePhase(userTurns)
     await this.#inventionPhase(userTurns)
+    await this.#playLawActions(LawPhase.AFTER_INVENTION, userTurns)
     await this.#researchPhase(userTurns)
     await this.#playLawActions(LawPhase.AFTER_RESEARCH, userTurns)
     await this.#jobPhase(userTurns)
@@ -418,6 +420,56 @@ export class Engine extends EventEmitter {
                 // Modify turn as law may not allow some actions
                 turns[index] = currentTurn
               }))
+            }
+          }
+        ]
+      },
+      {
+        id: 'SCIENTIFIC_RACE',
+        effects: [
+          {
+            phase: LawPhase.AFTER_INVENTION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                /*
+                For every player who played invention, check if that invention gave user more points than any other
+                previously played. If so, give user 2 coins
+                */
+                const turn = turns[i]
+                if (turn?.card !== undefined && turn.action === Action.INVENTION) {
+                  const pointsGave = this.#players[i].calculateInventionPoints(turn.card)
+                  let isBiggest = true
+                  for (const invention of this.#players[i].inventions) {
+                    if (invention.id !== turn.card.id && this.#players[i].calculateInventionPoints(invention) >= pointsGave) {
+                      isBiggest = false
+                      break
+                    }
+                  }
+                  if (isBiggest) {
+                    await this.#players[i].addCoins(2)
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'PAY_OFFS',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_TURN,
+            action: async () => {
+              for (const player of this.#players) {
+                // At the beginning of the round, if player has more than 5 coins, take coins to leave player with number divided by 5
+                if (player.coins > 5) {
+                  await player.takeCoins(player.coins % 5)
+                }
+              }
             }
           }
         ]

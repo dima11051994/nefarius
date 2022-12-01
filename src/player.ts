@@ -36,7 +36,11 @@ export default class Player {
   }
 
   get points (): number {
-    return this.#inventions.reduce((sum, invention) => sum + invention.points +
+    return this.#inventions.reduce((sum, invention) => sum + this.calculateInventionPoints(invention), 0)
+  }
+
+  calculateInventionPoints (invention: InventionCard): number {
+    return invention.points +
       invention.effects
         .filter((effect) => effect.object === EffectObject.POINT)
         .reduce((sum, effect) => {
@@ -54,7 +58,7 @@ export default class Player {
               break
           }
           return effect.positive ? sum + points : sum - points
-        }, 0), 0)
+        }, 0)
   }
 
   constructor (public user: User) {
