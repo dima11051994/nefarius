@@ -159,6 +159,7 @@ export default class Player {
     let field: Action
     do {
       field = await this.user.placeSpy()
+      // TODO: Notify user that previous spy is returned
     } while (!this.#canPlaceSpy(field, free))
     this.#spies--
     this.#activeSpies[field]++

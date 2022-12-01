@@ -1,6 +1,6 @@
 import * as net from 'net'
 import { Engine } from '../engine'
-import { Action, InventionCard, Turn, User } from '../types'
+import { Action, InventionCard, PlayerStats, Turn, User } from '../types'
 import _ from 'lodash'
 
 export enum PlayerStatus {
@@ -11,11 +11,13 @@ export enum PlayerStatus {
 
 export enum Method {
   GIVE_CARDS,
+  TAKE_OFF_CARDS,
   RETURN_SPY,
   SEND_SPY,
-  SET_MONEY,
-  TAKE_OFF_CARDS,
-  TURN
+  CANCEL_SEND_SPY,
+  SET_COINS,
+  TURN,
+  STATS
 }
 
 export interface SocketMessage {
@@ -25,6 +27,7 @@ export interface SocketMessage {
   cardIds?: string[]
   turn?: Turn
   count?: number
+  stats?: PlayerStats
 }
 
 export class SocketPlayer implements User {
@@ -35,6 +38,14 @@ export class SocketPlayer implements User {
   constructor (socket: net.Socket) {
     this.socket = socket
     socket.on('data', (data) => this._socketDataHandler(data))
+  }
+
+  async cancelPlaceSpy (field: Action): Promise<void> {
+    return await Promise.resolve()
+  }
+
+  async statistics (stats: PlayerStats): Promise<void> {
+    return await Promise.resolve()
   }
 
   buffer: string = ''
@@ -97,8 +108,8 @@ export class SocketPlayer implements User {
   }
 
   async setCoins (money: number): Promise<void> {
-    await this.socket.write(JSON.stringify({ method: Method.SET_MONEY, count: money }) + '\r')
-    await this.waitForAnswer(Method.SET_MONEY)
+    await this.socket.write(JSON.stringify({ method: Method.SET_COINS, count: money }) + '\r')
+    await this.waitForAnswer(Method.SET_COINS)
   }
 
   async takeOffCards (count: number): Promise<string[]> {

@@ -1,5 +1,10 @@
 import * as _ from 'lodash'
-import { EffectDelimiter, EffectObject, EffectTarget, InventionCard } from '../types'
+import {
+  EffectDelimiter,
+  EffectObject,
+  EffectTarget,
+  InventionCard
+} from '../types'
 
 export function initCards (): InventionCard[] {
   return [

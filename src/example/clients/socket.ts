@@ -45,9 +45,9 @@ async function messageHandler (message: SocketMessage): Promise<void> {
       await consoleClient.giveCards(message.cards ?? [])
       await socket.write(JSON.stringify({ method: Method.GIVE_CARDS }) + '\r')
       break
-    case Method.SET_MONEY:
+    case Method.SET_COINS:
       await consoleClient.setCoins(message.count ?? 0)
-      await socket.write(JSON.stringify({ method: Method.SET_MONEY }) + '\r')
+      await socket.write(JSON.stringify({ method: Method.SET_COINS }) + '\r')
       break
     case Method.RETURN_SPY:
       answer = await consoleClient.returnSpy()

@@ -5,6 +5,16 @@ export interface InventionCard {
   price: number
 }
 
+export interface Law {
+  id: string
+  effects: [
+    {
+      phase: LawPhase
+      action: (turns?: Turn[]) => Promise<void>
+    }
+  ]
+}
+
 export enum EffectTarget {
   SELF = 'SELF',
   OTHERS = 'OTHERS'
@@ -45,6 +55,10 @@ export interface User {
   placeSpy: SendSpyFunc
   // Return spy from some field
   returnSpy: ReturnSpyFunc
+  // Notify that spy isn't placed to a specific field
+  cancelPlaceSpy: CancelSendSpyFunc
+  // Send statistics
+  statistics: SendStatisticsFunc
 }
 
 export type TurnFunc = () => Promise<Turn>
@@ -52,6 +66,8 @@ export type GiveCardsFunc = (cards: InventionCard[]) => Promise<void>
 export type SetCoinsFunc = (coins: number) => Promise<void>
 export type TakeOffCardsFunc = (count: number) => Promise<string[]>
 export type SendSpyFunc = () => Promise<Action>
+export type CancelSendSpyFunc = (action: Action) => Promise<void>
+export type SendStatisticsFunc = (statistics: PlayerStats) => Promise<void>
 export type ReturnSpyFunc = () => Promise<Action>
 
 /**
@@ -67,6 +83,19 @@ export enum Action {
   INVENTION,
   RESEARCH,
   JOB
+}
+
+export enum LawPhase {
+  BEFORE_START,
+  BEFORE_TURN,
+  ON_SPY_PROCESSION,
+  ON_ACTION_SELECT,
+  AFTER_PLACING_SPY,
+  ON_INVENTION,
+  AFTER_INVENTION,
+  ON_RESEARCH,
+  AFTER_RESEARCH,
+  AFTER_TURN
 }
 
 export interface PlayerStats {

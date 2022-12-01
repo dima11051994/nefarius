@@ -6,6 +6,8 @@ import {
   EffectTarget,
   InventionCard,
   InventionEffect,
+  Law,
+  LawPhase,
   PlayerStats,
   Turn,
   User
@@ -24,6 +26,7 @@ interface GameSettings {
 
 export class Engine extends EventEmitter {
   #players: Player[]
+  #activeLaws: Law[]
   #activeDeck: InventionCard[]
   #usedDeck: InventionCard[]
   #options: GameSettings
@@ -42,10 +45,12 @@ export class Engine extends EventEmitter {
     }
     this.#activeDeck = initCards()
     this.#usedDeck = []
+    this.#activeLaws = []
   }
 
   async start (): Promise<User> {
     this.#activeDeck = shuffle(this.#activeDeck)
+    this.#activeLaws = shuffle(this.#initLaws()).slice(0, 2)
     await this.#distributeCards()
     const initialCoins = this.#options.initialCoins
     await Promise.all(this.#players.map(async (player) => await player.addCoins(initialCoins)))
@@ -93,6 +98,27 @@ export class Engine extends EventEmitter {
     await this.#inventionPhase(userTurns)
     await this.#researchPhase(userTurns)
     await this.#jobPhase(userTurns)
+    await this.#playLawActions(LawPhase.AFTER_TURN, userTurns)
+  }
+
+  /**
+   * Play law actions for the specific phase
+   * @param phase
+   * @param turns
+   * @private
+   */
+  async #playLawActions (phase: LawPhase, turns?: Turn[]): Promise<void> {
+    const actions: Array<(turns?: Turn[]) => Promise<void>> = []
+    for (const law of this.#activeLaws) {
+      actions.push(...(
+        law.effects
+          .filter((effect) => effect.phase === phase)
+          .map((effect) => effect.action)
+      ))
+    }
+    for (const action of actions) {
+      await action(turns)
+    }
   }
 
   /**
@@ -300,5 +326,32 @@ export class Engine extends EventEmitter {
         break
       }
     }
+  }
+
+  #initLaws (): Law[] {
+    return [
+      {
+        id: 'ALIEN_CONTACTS',
+        effects: [
+          {
+            phase: LawPhase.AFTER_TURN,
+            action: async (turns?: Turn[]): Promise<void> => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // For every player who played invention, throw away all invention cards and give new
+                if (turns[i]?.action === Action.INVENTION) {
+                  const count = this.#players[i].cards
+                  await this.#players[i].takeCards(count)
+                  await this.#giveCardsToPlayer(this.#players[i], count)
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
   }
 }
