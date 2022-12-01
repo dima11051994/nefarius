@@ -137,6 +137,7 @@ export class Engine extends EventEmitter {
    * @private
    */
   async #processSpies (turns: Turn[]): Promise<void> {
+    await this.#playLawActions(LawPhase.ON_SPY_PROCESSION, turns)
     await Promise.all(this.#players.map(async (player, index) => {
       const leftPlayerAction = turns[index === 0 ? turns.length - 1 : index - 1].action
       const rightPlayerAction = turns[index === turns.length - 1 ? 0 : index + 1].action
@@ -574,6 +575,48 @@ export class Engine extends EventEmitter {
               // At the beginning of the round, give every player 2 coins
               for (const player of this.#players) {
                 await player.addCoins(2)
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'GAME_THEORY',
+        effects: [
+          {
+            phase: LawPhase.ON_SPY_PROCESSION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // Every player who played Research in this round should get twice more coins from spies.
+                // To achieve this, simply rerun the same logic for spies processing for this user
+                if (turns[i].action === Action.RESEARCH) {
+                  const leftPlayerAction = turns[i === 0 ? turns.length - 1 : i - 1].action
+                  const rightPlayerAction = turns[i === turns.length - 1 ? 0 : i + 1].action
+                  // Earn 1 coin per each spy sitting on the action of player's neighbours
+                  await this.#players[i].processSpies(leftPlayerAction, rightPlayerAction)
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'INSIDES',
+        effects: [
+          {
+            phase: LawPhase.ON_SPY_PROCESSION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // Every player gets coins from spies on the played action
+                await this.#players[i].processSpies(turns[i].action)
               }
             }
           }
