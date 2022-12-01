@@ -1,3 +1,5 @@
+import Player from './player'
+
 export interface InventionCard {
   id: string
   points: number
@@ -10,7 +12,7 @@ export interface Law {
   effects: [
     {
       phase: LawPhase
-      action: (turns?: Turn[]) => Promise<void>
+      action: (turns?: Turn[], player?: Player) => Promise<void>
     }
   ]
 }

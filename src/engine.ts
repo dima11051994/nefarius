@@ -114,12 +114,13 @@ export class Engine extends EventEmitter {
 
   /**
    * Play law actions for the specific phase
-   * @param phase
-   * @param turns
+   * @param phase Current game phase
+   * @param turns User turns in the current round
+   * @param player Current player instance
    * @private
    */
-  async #playLawActions (phase: LawPhase, turns?: Turn[]): Promise<void> {
-    const actions: Array<(turns?: Turn[]) => Promise<void>> = []
+  async #playLawActions (phase: LawPhase, turns?: Turn[], player?: Player): Promise<void> {
+    const actions: Array<(turns?: Turn[], player?: Player) => Promise<void>> = []
     for (const law of this.#activeLaws) {
       actions.push(...(
         law.effects
@@ -128,7 +129,7 @@ export class Engine extends EventEmitter {
       ))
     }
     for (const action of actions) {
-      await action(turns)
+      await action(turns, player)
     }
   }
 
@@ -153,17 +154,16 @@ export class Engine extends EventEmitter {
    * @private
    */
   async #espionagePhase (userTurns: Turn[]): Promise<void> {
-    await Promise.all(userTurns.map((turn, index) => {
+    await Promise.all(userTurns.map(async (turn, index) => {
       if (userTurns[index].action !== Action.ESPIONAGE) {
         return
       }
-      return this.#players[index].placeSpy()
-        .then((action) => {
-          if (action === undefined) {
-            this.emit('spies.over', index)
-          }
-          this.emit('espionage', index)
-        })
+      const action = await this.#players[index].placeSpy()
+      if (action === undefined) {
+        this.emit('spies.over', index)
+      }
+      this.emit('espionage', index)
+      await this.#playLawActions(LawPhase.AFTER_PLACING_SPY, userTurns, this.#players[index])
     }))
   }
 
@@ -345,6 +345,10 @@ export class Engine extends EventEmitter {
       // Can't place or return spy, do nothing further
       if (field === undefined) {
         break
+      }
+      // If player placed a spy, play related law effects
+      if (positive) {
+        await this.#playLawActions(LawPhase.AFTER_PLACING_SPY, undefined, player)
       }
     }
   }
@@ -618,6 +622,21 @@ export class Engine extends EventEmitter {
                 // Every player gets coins from spies on the played action
                 await this.#players[i].processSpies(turns[i].action)
               }
+            }
+          }
+        ]
+      },
+      {
+        id: 'ACADEMICS',
+        effects: [
+          {
+            phase: LawPhase.AFTER_PLACING_SPY,
+            action: async (turns?: Turn[], player?: Player) => {
+              if (player === undefined) {
+                return
+              }
+              // After placing a spy on the field (no matter because of what), an invention card should be given
+              await this.#giveCardsToPlayer(player, 1)
             }
           }
         ]
