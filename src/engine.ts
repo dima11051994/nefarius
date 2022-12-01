@@ -172,7 +172,11 @@ export class Engine extends EventEmitter {
       if (userTurns[index].action !== Action.INVENTION || turn.card === undefined) {
         return
       }
-      return await this.#players[index].invent(turn.card)
+      const inventedCard = await this.#players[index].invent(turn.card)
+      if (inventedCard !== undefined) {
+        userTurns[index].metadata = Object.assign({}, userTurns[index].metadata, { successful: true })
+      }
+      return inventedCard
     }))
     // If at least one person successfully played invention card, run invention-related law effects
     if (inventions.filter((invention) => invention !== undefined).length > 0) {
@@ -561,9 +565,10 @@ export class Engine extends EventEmitter {
                       break
                     }
                   }
-                  turn.metadata = {
-                    modifiedCard: Object.assign({}, turn.card, { effects: previousEffects })
+                  if (turn.metadata === undefined) {
+                    turn.metadata = {}
                   }
+                  turn.metadata.modifiedCard = Object.assign({}, turn.card, { effects: previousEffects })
                 }
               }
             }
@@ -637,6 +642,61 @@ export class Engine extends EventEmitter {
               }
               // After placing a spy on the field (no matter because of what), an invention card should be given
               await this.#giveCardsToPlayer(player, 1)
+            }
+          }
+        ]
+      },
+      {
+        id: 'ANCIENT_FORECASTS',
+        effects: [
+          {
+            phase: LawPhase.AFTER_RESEARCH,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // On research, give user one more invention card
+                if (turns[i].action === Action.RESEARCH) {
+                  await this.#giveCardsToPlayer(this.#players[i], 1)
+                }
+              }
+            }
+          },
+          {
+            phase: LawPhase.AFTER_INVENTION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // On invention - take one more invention card from user
+                if (turns[i].action === Action.INVENTION && turns[i].metadata?.successful === true) {
+                  await this.#players[i].takeCards(1)
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'HYPER_INFLATION',
+        effects: [
+          {
+            phase: LawPhase.AFTER_INVENTION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // After invention player loses all coins
+                if (turns[i].action === Action.INVENTION && turns[i].metadata?.successful === true) {
+                  await this.#players[i].takeCoins(this.#players[i].coins)
+                }
+              }
             }
           }
         ]

@@ -9,12 +9,12 @@ export interface InventionCard {
 
 export interface Law {
   id: string
-  effects: [
-    {
-      phase: LawPhase
-      action: (turns?: Turn[], player?: Player) => Promise<void>
-    }
-  ]
+  effects: LawEffect[]
+}
+
+export interface LawEffect {
+  phase: LawPhase
+  action: (turns?: Turn[], player?: Player) => Promise<void>
 }
 
 export enum EffectTarget {
@@ -81,6 +81,7 @@ export interface Turn {
   // Metadata may be filled by the engine in its own purpose
   metadata?: {
     modifiedCard?: InventionCard
+    successful?: boolean
   }
 }
 
