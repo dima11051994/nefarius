@@ -51,6 +51,8 @@ export class Engine extends EventEmitter {
   async start (): Promise<User> {
     this.#activeDeck = shuffle(this.#activeDeck)
     this.#activeLaws = shuffle(this.#initLaws()).slice(0, 2)
+    // Play laws that affect core game settings
+    await this.#playLawActions(LawPhase.BEFORE_START)
     await this.#distributeCards()
     const initialCoins = this.#options.initialCoins
     await Promise.all(this.#players.map(async (player) => await player.addCoins(initialCoins)))
@@ -97,7 +99,9 @@ export class Engine extends EventEmitter {
     await this.#espionagePhase(userTurns)
     await this.#inventionPhase(userTurns)
     await this.#researchPhase(userTurns)
+    await this.#playLawActions(LawPhase.AFTER_RESEARCH, userTurns)
     await this.#jobPhase(userTurns)
+    // Play law actions that affect end of a turn
     await this.#playLawActions(LawPhase.AFTER_TURN, userTurns)
   }
 
@@ -346,6 +350,40 @@ export class Engine extends EventEmitter {
                   const count = this.#players[i].cards
                   await this.#players[i].takeCards(count)
                   await this.#giveCardsToPlayer(this.#players[i], count)
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'FIRE_WATER_WHITE_MOUSE',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_START,
+            // Job action gives your 6 coins instead of 4
+            action: async (): Promise<void> => {
+              this.#options.jobCoins = 6
+              return await Promise.resolve()
+            }
+          }
+        ]
+      },
+      {
+        id: 'TWO_CARROTS_METHOD',
+        effects: [
+          {
+            phase: LawPhase.AFTER_RESEARCH,
+            action: async (turns?: Turn[]): Promise<void> => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                // For every player who played research, give this player one more card but then take one
+                if (turns[i]?.action === Action.RESEARCH) {
+                  await this.#giveCardsToPlayer(this.#players[i], 1)
+                  await this.#players[i].takeCards(1)
                 }
               }
             }
