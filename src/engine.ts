@@ -369,9 +369,8 @@ export class Engine extends EventEmitter {
           {
             phase: LawPhase.BEFORE_START,
             // Job action gives your 6 coins instead of 4
-            action: async (): Promise<void> => {
+            action: async () => {
               this.#options.jobCoins = 6
-              return await Promise.resolve()
             }
           }
         ]
@@ -381,7 +380,7 @@ export class Engine extends EventEmitter {
         effects: [
           {
             phase: LawPhase.AFTER_RESEARCH,
-            action: async (turns?: Turn[]): Promise<void> => {
+            action: async (turns?: Turn[]) => {
               // If turns were not specified, do nothing - but it is an error case
               if (turns === undefined) {
                 return
@@ -402,7 +401,7 @@ export class Engine extends EventEmitter {
         effects: [
           {
             phase: LawPhase.ON_ACTION_SELECT,
-            action: async (turns?: Turn[]): Promise<void> => {
+            action: async (turns?: Turn[]) => {
               // If turns were not specified, do nothing - but it is an error case
               if (turns === undefined) {
                 return
@@ -469,6 +468,47 @@ export class Engine extends EventEmitter {
                 if (player.coins > 5) {
                   await player.takeCoins(player.coins % 5)
                 }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'GRANTS',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_TURN,
+            action: async () => {
+              for (const player of this.#players) {
+                // If player has no inventions, give 2 coins
+                if (player.inventions.length === 0) {
+                  await player.addCoins(2)
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'ANIMAL_RIGHTS_PROTECTION',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_START,
+            action: async () => {
+              this.#options.researchCoins = 0
+            }
+          }
+        ]
+      },
+      {
+        id: 'CHEAP_NUCLEAR_ENERGY',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_START,
+            action: async () => {
+              // All inventions cost twice less (rounding up)
+              for (const card of this.#activeDeck) {
+                card.price = Math.round(card.price / 2)
               }
             }
           }
