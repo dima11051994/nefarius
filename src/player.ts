@@ -143,8 +143,8 @@ export default class Player {
     return await this.user.turn()
   }
 
-  async processSpies (left: Action, right: Action): Promise<number> {
-    const earned = this.#activeSpies[left] + this.#activeSpies[right]
+  async processSpies (...actions: Action[]): Promise<number> {
+    const earned = actions.reduce((sum, action) => sum + this.#activeSpies[action], 0)
     if (earned > 0) {
       await this.addCoins(earned)
     }

@@ -564,6 +564,20 @@ export class Engine extends EventEmitter {
             }
           }
         ]
+      },
+      {
+        id: 'FREE_SCIENTISTS_RADIO',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_TURN,
+            action: async () => {
+              // At the beginning of the round, give every player 2 coins
+              for (const player of this.#players) {
+                await player.addCoins(2)
+              }
+            }
+          }
+        ]
       }
     ]
   }
