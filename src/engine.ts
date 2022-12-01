@@ -30,6 +30,8 @@ export class Engine extends EventEmitter {
   #activeDeck: InventionCard[]
   #usedDeck: InventionCard[]
   #options: GameSettings
+  // Turns that players selected in a previous round
+  #previousTurns: Turn[]
 
   // TODO: Define necessary options
   constructor (users: User[]) {
@@ -46,6 +48,7 @@ export class Engine extends EventEmitter {
     this.#activeDeck = initCards()
     this.#usedDeck = []
     this.#activeLaws = []
+    this.#previousTurns = []
   }
 
   async start (): Promise<User> {
@@ -94,6 +97,7 @@ export class Engine extends EventEmitter {
 
   async #playRound (): Promise<void> {
     const userTurns: Turn[] = await Promise.all(this.#players.map(async (player) => await player.turn()))
+    await this.#playLawActions(LawPhase.ON_ACTION_SELECT, userTurns)
     this.emit('turn', userTurns)
     await this.#processSpies(userTurns)
     await this.#espionagePhase(userTurns)
@@ -103,6 +107,7 @@ export class Engine extends EventEmitter {
     await this.#jobPhase(userTurns)
     // Play law actions that affect end of a turn
     await this.#playLawActions(LawPhase.AFTER_TURN, userTurns)
+    this.#previousTurns = userTurns
   }
 
   /**
@@ -386,6 +391,33 @@ export class Engine extends EventEmitter {
                   await this.#players[i].takeCards(1)
                 }
               }
+            }
+          }
+        ]
+      },
+      {
+        id: 'BORING_ERA',
+        effects: [
+          {
+            phase: LawPhase.ON_ACTION_SELECT,
+            action: async (turns?: Turn[]): Promise<void> => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              // If it is the first round, do nothing
+              if (this.#previousTurns.length === 0) {
+                return
+              }
+              // Force user to choose action not equal to a previous turn
+              await Promise.all(turns.map(async (turn, index) => {
+                let currentTurn = turn
+                while (currentTurn.action === this.#previousTurns[index].action) {
+                  currentTurn = await this.#players[index].turn()
+                }
+                // Modify turn as law may not allow some actions
+                turns[index] = currentTurn
+              }))
             }
           }
         ]
