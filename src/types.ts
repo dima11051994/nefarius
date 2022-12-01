@@ -76,6 +76,10 @@ export type ReturnSpyFunc = () => Promise<Action>
 export interface Turn {
   action: Action
   card?: InventionCard
+  // Metadata may be filled by the engine in its own purpose
+  metadata?: {
+    modifiedCard?: InventionCard
+  }
 }
 
 export enum Action {

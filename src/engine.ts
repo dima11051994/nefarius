@@ -173,12 +173,21 @@ export class Engine extends EventEmitter {
       }
       return await this.#players[index].invent(turn.card)
     }))
+    // If at least one person successfully played invention card, run invention-related law effects
+    if (inventions.filter((invention) => invention !== undefined).length > 0) {
+      await this.#playLawActions(LawPhase.ON_INVENTION, userTurns)
+    }
     for (let i = 0; i < this.#players.length; i++) {
-      const effects = (inventions[i]?.effects ?? []).filter((effect) => effect.target === EffectTarget.SELF)
+      const effects = (userTurns[i]?.metadata?.modifiedCard?.effects ?? inventions[i]?.effects ?? [])
+        .filter((effect) => effect.target === EffectTarget.SELF)
       // iterate through other's played cards, add effects with target `others`
       let j = i + 1
       do {
-        effects.push(...((inventions[j]?.effects ?? []).filter((effect) => effect.target === EffectTarget.OTHERS)))
+        // Check turn metadata: some laws may modify card, and we need to use card from metadata first
+        effects.push(...(
+          (userTurns[j]?.metadata?.modifiedCard?.effects ?? inventions[j]?.effects ?? [])
+            .filter((effect) => effect.target === EffectTarget.OTHERS)
+        ))
         j++
         // Start from the beginning as it is a circle of players
         if (j >= this.#players.length) {
@@ -509,6 +518,48 @@ export class Engine extends EventEmitter {
               // All inventions cost twice less (rounding up)
               for (const card of this.#activeDeck) {
                 card.price = Math.round(card.price / 2)
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: 'SCIENTIFIC_MARATHON',
+        effects: [
+          {
+            phase: LawPhase.BEFORE_START,
+            action: async () => {
+              // Need to reach 30 points to win
+              this.#options.winnerPoints = 30
+            }
+          }
+        ]
+      },
+      {
+        id: 'DELAYED_EFFECT',
+        effects: [
+          {
+            phase: LawPhase.ON_INVENTION,
+            action: async (turns?: Turn[]) => {
+              // If turns were not specified, do nothing - but it is an error case
+              if (turns === undefined) {
+                return
+              }
+              for (let i = 0; i < turns.length; i++) {
+                const turn = turns[i]
+                // If user plays invention card without effects, assign effect from a previously invented card
+                if (turn.action === Action.INVENTION && turn?.card !== undefined && turn?.card.effects.length === 0) {
+                  let previousEffects: InventionEffect[] = []
+                  for (let j = this.#players[i].inventions.length - 1; j >= 0; j++) {
+                    if (this.#players[i].inventions[j].effects.length >= 0) {
+                      previousEffects = this.#players[i].inventions[j].effects
+                      break
+                    }
+                  }
+                  turn.metadata = {
+                    modifiedCard: Object.assign({}, turn.card, { effects: previousEffects })
+                  }
+                }
               }
             }
           }
