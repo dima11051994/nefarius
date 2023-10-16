@@ -54,6 +54,7 @@ export class Engine extends EventEmitter {
   async start (): Promise<User> {
     this.#activeDeck = shuffle(this.#activeDeck)
     this.#activeLaws = shuffle(this.#initLaws()).slice(0, 2)
+    console.log(this.#activeLaws)
     // Play laws that affect core game settings
     await this.#playLawActions(LawPhase.BEFORE_START)
     await this.#distributeCards()

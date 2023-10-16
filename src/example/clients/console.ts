@@ -1,11 +1,13 @@
 import readline, { Interface } from 'readline'
 import {
   Action,
+  CancelSendSpyFunc,
   EffectDelimiter,
   EffectObject,
   EffectTarget,
   InventionCard,
-  InventionEffect,
+  InventionEffect, PlayerStats,
+  SendStatisticsFunc,
   Turn,
   User
 } from '../../types'
@@ -32,6 +34,14 @@ export class ConsoleClient implements User {
   constructor () {
     this.readlineInterface = readline.createInterface({ input: process.stdin, output: process.stdout })
     this.readlineInterface.on('line', this.handleLine.bind(this))
+  }
+
+  cancelPlaceSpy (action: Action): Promise<void> {
+    return Promise.resolve()
+  }
+
+  statistics (statistics: PlayerStats): Promise<void> {
+    return Promise.resolve()
   }
 
   handleLine (line: string): void {
@@ -68,7 +78,7 @@ export class ConsoleClient implements User {
   async giveCards (cards: InventionCard[]): Promise<void> {
     console.log('Received cards: ')
     for (const card of cards) {
-      console.log(this._logCard(card))
+      console.log(this.getCardMessage(card))
       this.cards.push(card)
     }
     return await Promise.resolve()
@@ -140,7 +150,7 @@ export class ConsoleClient implements User {
     }
     console.log('Your cards: ')
     for (const card of this.cards) {
-      this._logCard(card)
+      console.log(this.getCardMessage(card))
     }
     let removedCardIndexes: number[] = []
     const validIndexes = []
@@ -207,7 +217,7 @@ export class ConsoleClient implements User {
     if (action === Action.INVENTION) {
       console.log('Your cards: ')
       for (const card of this.cards) {
-        console.log(this._logCard(card))
+        console.log(this.getCardMessage(card))
       }
       const validIndexes = []
       for (let i = 0; i < this.cards.length; i++) {
@@ -220,15 +230,15 @@ export class ConsoleClient implements User {
     return result
   }
 
-  _logCard (card: InventionCard): string {
+  getCardMessage (card: InventionCard): string {
     let result = `{ id: ${card.id}, points: ${card.points}, price: ${card.price}`
     if (card.effects.length > 0) {
-      result += `, effects: [${card.effects.map(this._logEffect).join(', ')}]`
+      result += `, effects: [${card.effects.map(this.getEffectMessage).join(', ')}]`
     }
     return result
   }
 
-  _logEffect (effect: InventionEffect): string {
+  getEffectMessage (effect: InventionEffect): string {
     let result = '{ '
     result += effect.target === EffectTarget.SELF ? 'self' : 'others'
     result += effect.positive ? ' + ' : ' - '
