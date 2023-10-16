@@ -2,6 +2,7 @@
   "name": "nefarius",
   "version": "0.0.1",
   "description": "Nefario engine. It's main goal is to handle the game process.",
+  "main": "build/index.js",
   "dependencies": {
     "lodash": "^4.17.21"
   },
